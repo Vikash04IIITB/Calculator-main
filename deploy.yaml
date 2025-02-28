@@ -5,17 +5,22 @@
   tasks:
     - name: Pull Docker Image
       docker_image:
-        name: "aarushkaswan/calculator"
+        name: "vikash04/calculator-app:latest"
         source: pull
       register: docker_pull_result
 
     - name: Display Docker Pull Result
       debug:
         var: docker_pull_result
-        
+
     - name: Start Docker service
       service:
         name: docker
         state: started
+
+    - name: Stop running container (if exists)
+      ignore_errors: yes
+      command: docker rm -f calculator-container
+
     - name: Running container
-      shell: docker run -it -d --name calculator aarushkaswan/calculator
+      shell: docker run -it -d --name calculator-container -p 8080:8080 vikash04/calculator-app:latest

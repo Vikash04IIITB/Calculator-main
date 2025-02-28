@@ -5,22 +5,24 @@
   tasks:
     - name: Pull Docker Image
       docker_image:
-        name: "vikash04/calculator-app:latest"
+        name: "vikash04/calculator-app"
         source: pull
       register: docker_pull_result
 
     - name: Display Docker Pull Result
       debug:
         var: docker_pull_result
-
-    - name: Start Docker service
-      service:
-        name: docker
-        state: started
-
-    - name: Stop running container (if exists)
-      ignore_errors: yes
-      command: docker rm -f calculator-container
+        
+    - name: Ensure Docker is running (Mac workaround)
+      command: "open -a Docker"
+      args:
+        creates: "/var/run/docker.sock"
+      when: ansible_os_family == "Darwin"  # Runs only on Mac
 
     - name: Running container
-      shell: docker run -it -d --name calculator-container -p 8080:8080 vikash04/calculator-app:latest
+      docker_container:
+        name: calculator
+        image: vikash04/calculator-app
+        state: started
+        detach: true
+        interactive: true

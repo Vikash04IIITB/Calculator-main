@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE_NAME = 'calculator'
+        DOCKER_IMAGE_NAME = 'vikash04/calculator-app'
         GITHUB_REPO_URL = 'https://github.com/Vikash04IIITB/Calculator-main.git'
     }
 
@@ -11,7 +11,6 @@ pipeline {
             steps {
                 script {
                     git branch: 'main', url: "${GITHUB_REPO_URL}"
-
                 }
             }
         }
@@ -27,17 +26,18 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    docker.build("${DOCKER_IMAGE_NAME}", '.')
+                    sh 'docker build -t ${DOCKER_IMAGE_NAME} .'
                 }
             }
         }
 
         stage('Push Docker Image') {
             steps {
-                script {
-                    docker.withRegistry('', 'DockerHub') {
-                        sh 'docker tag calculator vikash04/calculator:latest'
-                        sh 'docker push vikash04/calculator'
+                withCredentials([string(credentialsId: 'DOCKER_HUB_TOKEN', variable: 'DOCKER_PASS')]) {
+                    script {
+                        sh 'echo "$DOCKER_PASS" | docker login -u vikash04 --password-stdin'
+                        sh 'docker tag ${DOCKER_IMAGE_NAME} ${DOCKER_IMAGE_NAME}:latest'
+                        sh 'docker push ${DOCKER_IMAGE_NAME}:latest'
                     }
                 }
             }
@@ -46,9 +46,7 @@ pipeline {
         stage('Run Ansible Playbook') {
             steps {
                 script {
-                    ansiblePlaybook(
-                        playbook: 'deploy.yaml'
-                    )
+                    sh 'ansible-playbook deploy.yaml'
                 }
             }
         }

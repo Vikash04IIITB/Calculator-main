@@ -15,17 +15,21 @@ pipeline {
                 sh 'mvn clean package'
             }
         }
+        stage('Authenticate Docker') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'DOCKER_HUB_TOKEN', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                }
+            }
+        }
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t ${DOCKER_IMAGE_NAME} .'
+                sh 'docker build --no-cache -t ${DOCKER_IMAGE_NAME} .'
             }
         }
         stage('Push Docker Image') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'DOCKER_HUB_TOKEN', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
-                    sh 'docker push ${DOCKER_IMAGE_NAME}'
-                }
+                sh 'docker push ${DOCKER_IMAGE_NAME}'
             }
         }
         stage('Run Ansible Playbook') {
